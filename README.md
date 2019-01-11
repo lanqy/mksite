@@ -25,11 +25,7 @@
 }
 ```
 
-创建原始文件目录 source ( .md 文件 ) 目录
-
-创建静态资源文件目录( static )
-
-创建模板文件目录 ( template )，包含三个文件，分别为：
+模板文件目录 ( template )，包含三个文件，分别为：
 
 
 ### template/tpl.html :
