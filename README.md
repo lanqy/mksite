@@ -155,7 +155,7 @@
 node ./index.js
 ```
 
-另一个用 golang 写的 https://github.com/lanqy/mksite.go
+另一个用 golang 写的版本： https://github.com/lanqy/mksite.go
 
     
 
