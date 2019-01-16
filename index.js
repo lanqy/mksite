@@ -6,12 +6,12 @@ const mdItFootnote = require('markdown-it-footnote');
 const mdItImsize = require('markdown-it-imsize');
 const mdItDeflist = require('markdown-it-deflist');
 const mdItDecorate = require('markdown-it-decorate');
-const highlight = require('./highlight.js');
+const highlight = require('./utils/highlight.js');
 const render = require('json-templater/string');
 const frontmatter = require('front-matter');
-const {join, extname, resolve, relative, dirname, basename} = require('path');
+const {join, extname, resolve} = require('path');
 const glob = require('tiny-glob');
-const {gray, green} = require('chalk');
+const {green} = require('chalk');
 const fs = require('fs-extra');
 const _ = require('lodash');
 
@@ -23,7 +23,6 @@ const pretty = require('pretty');
 
 const configFile = 'config.json';
 const dataFile = 'data.json';
-const pageJsonFile = 'page.json';
 const file = 'index.html';
 
 let md = mdIt({
@@ -43,7 +42,7 @@ async function main() {
     const files = await glob(config.sourceDir);
     const pageFiles = await glob(config.sourceDir.split('/')[0] + '/*.md');
 
-    const tpl = await readFileAsync(config.templateFile, 'utf8');
+    const tpl = await readFileAsync(config.postTemplateFile, 'utf8');
     const staticDir = config.staticDir;
     const targetDir = config.targetDir;
 
@@ -79,12 +78,12 @@ async function main() {
         // 创建单页面目录
         let pageContent = await readFileAsync(page, 'utf8');
         let {attributes: info, body} = frontmatter(pageContent);
-        let ext = extname(page);
         let separators = ['//', '\\\\', '\\', '/'];
         let pathArr = page.split(new RegExp(separators.join('|')));
+        let ext = extname(page);
         info.htmlDir = join(targetDir, pathArr[1].replace(ext, ''));
-        info.link = info.htmlDir;
-        info.htmlFile = join(info.link, file);
+        info.link = pathArr[1].replace(ext, '');
+        info.htmlFile = join(info.htmlDir, file);
         info.body = body;
         info.source = page;
         pageJsonArr.push(info);
@@ -97,48 +96,47 @@ async function main() {
 
     let jsons = _.sortBy(jsonArr, 'created', 'desc').reverse(); // 根据 created 排序
 
+    let websiteJson = {
+        posts: jsons,
+        pages: pageJsonArr,
+    };
+
     // 创建首页
     await makeIndex({
         config: config,
-        jsons: jsons,
+        results: websiteJson,
         targetDir: targetDir,
     });
 
-    await writeFileAsync(dataFile, JSON.stringify(jsons));
+    await writeFileAsync(targetDir + '/' + dataFile, JSON.stringify(websiteJson));
 
-    await writeFileAsync(pageJsonFile, JSON.stringify(pageJsonArr));
+    let data = JSON.parse(await readFileAsync(targetDir + '/' + dataFile));
 
-    let postData = JSON.parse(await readFileAsync(dataFile));
+    let navs = await mkNavs({
+        config: config,
+        results: websiteJson,
+        targetDir: targetDir,
+    });
 
-    let pageData = JSON.parse(await readFileAsync(pageJsonFile));
-
-    for (let d of postData) {
-        await _writeFile(d, tpl);
+    for (let d of data.posts) { // 创建文章
+        await _writeFile(d, navs, tpl);
     }
 
-    for (let p of pageData) {
-        await _writeFile(p, tpl);
+    for (let p of data.pages) { // 创建单页
+        await _writeFile(p, navs, tpl);
     }
 
-    console.log(green(' Done in ' + (new Date().getTime() - beginTime) + ' ms'));
+    console.log(green('\n Done in ' + (new Date().getTime() - beginTime) + ' ms\n'));
 }
 
 async function makeIndex(o) {
-    let itemTpl = await readFileAsync(o.config.itemTemplateFile, 'utf8');
-
-    let lists = '';
-
-    for (const json of o.jsons) {
-        lists += render(itemTpl, {
-            link: json.link,
-            title: json.title,
-            created: json.created,
-        });
-    }
-
     let indexTpl = await readFileAsync(o.config.indexTemplateFile, 'utf8');
 
     let index = resolve(o.targetDir, file);
+
+    let lists = await mkList(o);
+
+    let navs = await mkNavs(o);
 
     await writeFileAsync(
         index,
@@ -146,18 +144,52 @@ async function makeIndex(o) {
             render(indexTpl, {
                 siteName: o.config.siteName,
                 lists: lists,
+                navs: navs,
             }),
         ),
     );
 }
 
-async function _writeFile(info, tpl) {
+async function mkList(o) {
+    //创建列表
+    let itemTpl = await readFileAsync(o.config.itemTemplateFile, 'utf8');
+
+    let lists = '';
+
+    for (const json of o.results.posts) {
+        lists += render(itemTpl, {
+            link: json.link,
+            title: json.title,
+            created: json.created.split('/').join('-'),
+        });
+    }
+
+    return lists;
+}
+
+async function mkNavs(o) {
+    // 创建导航
+    let navTpl = await readFileAsync(o.config.navTemplateFile, 'utf8');
+    let navs = '';
+
+    for (const nav of o.results.pages) {
+        navs += render(navTpl, {
+            link: nav.link,
+            title: nav.title,
+        });
+    }
+
+    return navs;
+}
+
+async function _writeFile(info, navs, tpl) {
     await writeFileAsync(
         info.htmlFile,
         pretty(
             render(tpl, {
                 body: md.render(info.body),
                 title: info.title,
+                navs: navs,
                 description: info.description,
             }),
         ),

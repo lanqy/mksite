@@ -1,7 +1,9 @@
 ---
-title: about
-description: about
+title: 关于
+description: 关于
+author: lanqy
 ---
-# about
 
-test
+# 关于
+
+关于
