@@ -68,7 +68,7 @@
 
 ### template/index.html :
 
-```
+```html
 <!DOCTYPE html>
 <html>
 
