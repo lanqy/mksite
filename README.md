@@ -16,7 +16,7 @@
 {
     "siteName": "site name here",
     "staticDir": "static",
-    "baseUrl": "https://lanqy.xyz", // 可选
+    "baseUrl": "https://lanqy.xyz", // 用于生成 atom.xml
     "sourceDir": "source/_posts/*",
     "targetDir": "website",
     "navTemplateFile": "template/nav.html", // 导航模板
@@ -69,8 +69,6 @@
 ### template/index.html :
 
 ```
-<!DOCTYPE html>
-
 <!DOCTYPE html>
 <html>
 
