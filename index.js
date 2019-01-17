@@ -1,5 +1,5 @@
-const {readFile, writeFile} = require('fs');
-const {promisify} = require('util');
+const { readFile, writeFile } = require('fs');
+const { promisify } = require('util');
 const mdIt = require('markdown-it');
 const mdItKatex = require('markdown-it-katex');
 const mdItFootnote = require('markdown-it-footnote');
@@ -9,11 +9,12 @@ const mdItDecorate = require('markdown-it-decorate');
 const highlight = require('./utils/highlight.js');
 const render = require('json-templater/string');
 const frontmatter = require('front-matter');
-const {join, extname, resolve} = require('path');
+const { join, extname, resolve } = require('path');
 const glob = require('tiny-glob');
-const {green} = require('chalk');
+const { green } = require('chalk');
 const fs = require('fs-extra');
 const _ = require('lodash');
+const builder = require('xmlbuilder');
 
 const mkdirp = require('mkdirp');
 const readFileAsync = promisify(readFile);
@@ -24,6 +25,7 @@ const pretty = require('pretty');
 const configFile = 'config.json';
 const dataFile = 'data.json';
 const file = 'index.html';
+const atomFile = 'atom.xml';
 
 let md = mdIt({
     linkify: true,
@@ -57,17 +59,19 @@ async function main() {
     for (let item of files) {
         // 创建文章的目录
         let content = await readFileAsync(item, 'utf8');
-        let {attributes: info, body} = frontmatter(content);
+        let { attributes: info, body } = frontmatter(content);
+        let separators = ['//', '\\\\', '\\', '/'];
+        let pathArr = item.split(new RegExp(separators.join('|')));
         let ext = extname(item);
 
-        info.htmlDir = join(targetDir, info.created);
-        info.link = info.created;
+        info.link = info.created + '/' + pathArr[2].replace(ext, '');
+        info.htmlDir = join(targetDir, info.link);
         info.htmlFile = join(info.htmlDir, file);
         info.body = body;
         info.source = item;
         jsonArr.push(info);
 
-        await mkdirp(info.htmlDir.replace(/\\/g, '/'), function(err) {
+        await mkdirp(info.htmlDir.replace(/\\/g, '/'), function (err) {
             if (err) {
                 console.log(err);
             }
@@ -77,17 +81,17 @@ async function main() {
     for (let page of pageFiles) {
         // 创建单页面目录
         let pageContent = await readFileAsync(page, 'utf8');
-        let {attributes: info, body} = frontmatter(pageContent);
+        let { attributes: info, body } = frontmatter(pageContent);
         let separators = ['//', '\\\\', '\\', '/'];
         let pathArr = page.split(new RegExp(separators.join('|')));
         let ext = extname(page);
         info.htmlDir = join(targetDir, pathArr[1].replace(ext, ''));
-        info.link = pathArr[1].replace(ext, '');
+        info.link = '/' + pathArr[1].replace(ext, '');
         info.htmlFile = join(info.htmlDir, file);
         info.body = body;
         info.source = page;
         pageJsonArr.push(info);
-        mkdirpAsync(info.htmlDir, function(err) {
+        mkdirpAsync(info.htmlDir, function (err) {
             if (err) {
                 console.log(err);
             }
@@ -118,15 +122,44 @@ async function main() {
         targetDir: targetDir,
     });
 
-    for (let d of data.posts) { // 创建文章
+    for (let d of data.posts) {
+        // 创建文章
         await _writeFile(d, navs, tpl);
     }
 
-    for (let p of data.pages) { // 创建单页
+    for (let p of data.pages) {
+        // 创建单页
         await _writeFile(p, navs, tpl);
     }
 
+    await makeAtomXml({ config: config, results: websiteJson });
+
     console.log(green('\n Done in ' + (new Date().getTime() - beginTime) + ' ms\n'));
+}
+
+async function makeAtomXml(o) {
+    let data = JSON.parse(await readFileAsync(o.config.targetDir + '/' + dataFile));
+
+    var feed = builder
+        .create('feed', { encoding: 'utf-8' })
+        .att('xmlns', 'http://www.w3.org/2005/Atom')
+        .ele('title', o.config.siteName)
+        .up()
+        .ele('link', { href: o.config.baseUrl })
+        .up()
+        .ele('summary', o.config.siteName)
+        .up();
+
+    for (const item of data.posts) {
+        var entry = feed.ele('entry');
+        entry.ele('title', item.title);
+        entry.ele('link', item.link);
+        entry.ele('summary', item.description);
+    }
+
+    feed = feed.end({ pretty: true });
+
+    await writeFileAsync(o.config.targetDir + '/' + atomFile, feed);
 }
 
 async function makeIndex(o) {
@@ -199,7 +232,7 @@ async function _writeFile(info, navs, tpl) {
 }
 
 main()
-    .then(function() {})
-    .catch(function(error) {
+    .then(function () { })
+    .catch(function (error) {
         console.log(error);
     });
