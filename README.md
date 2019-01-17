@@ -12,7 +12,7 @@
 
 创建配置文件 ( config.json )，例如：
 
-```
+```json
 {
     "siteName": "site name here",
     "staticDir": "static",
@@ -68,42 +68,36 @@
 
 ### template/index.html :
 
-```
+```html
 <!DOCTYPE html>
 <html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui"
+        />
+        <link href="/css/style.css" rel="stylesheet" />
+        <title>{{siteName}}</title>
+    </head>
 
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui" />
-    <link href="/css/style.css" rel="stylesheet" />
-    <title>{{siteName}}</title>
-</head>
-
-<body>
-    <div>
+    <body>
         <div>
-            <header class="header">
-                <div class="container header-wrap">
-                    <h1 class="site-name">
-                        <a href="/">
-                            首页
-                        </a>
-                    </h1>
-                    <ul class="nav">
-                        {{navs}}
-                    </ul>
-                </div>
-            </header>
+            <div>
+                <header class="header">
+                    <div class="container header-wrap">
+                        <h1 class="site-name"><a href="/"> 首页 </a></h1>
+                        <ul class="nav">
+                            {{navs}}
+                        </ul>
+                    </div>
+                </header>
+            </div>
+            <div class="post-list">{{lists}}</div>
         </div>
-        <div class="post-list">
-            {{lists}}
-        </div>
-    </div>
-</body>
-
+    </body>
 </html>
-
 ```
 
 ### template/item.html :
