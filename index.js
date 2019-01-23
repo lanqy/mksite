@@ -28,6 +28,7 @@ const file = 'index.html';
 const atomFile = 'atom.xml';
 
 let md = mdIt({
+    html: true,
     linkify: true,
     typographer: true,
     highlight,
