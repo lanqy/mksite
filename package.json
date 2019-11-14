@@ -8,7 +8,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/lanqy/easymk.git"
+        "url": "git+https://github.com/lanqy/mksite.git"
     },
     "keywords": [
         "javascript",
@@ -20,9 +20,9 @@
     "author": "lanqy",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/lanqy/easymk/issues"
+        "url": "https://github.com/lanqy/mksite/issues"
     },
-    "homepage": "https://github.com/lanqy/easymk#readme",
+    "homepage": "https://github.com/lanqy/mksite#readme",
     "dependencies": {
         "ajv": "6.5.1",
         "chalk": "2.4.1",
