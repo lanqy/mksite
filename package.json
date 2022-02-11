@@ -24,7 +24,7 @@
     },
     "homepage": "https://github.com/lanqy/mksite#readme",
     "dependencies": {
-        "ajv": "6.5.1",
+        "ajv": "6.12.3",
         "chalk": "2.4.1",
         "chokidar": "^2.0.3",
         "front-matter": "2.3.0",
